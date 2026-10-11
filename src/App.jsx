@@ -323,12 +323,46 @@ function Hero({ onBuy, canBuy, buying }) {
 
   // Interactive dot field: dots scatter away from the cursor and spring back.
   useEffect(() => {
-    if (RM()) return;
     const hero = scope.current;
     const canvas = hero?.querySelector(".hero-dots");
     if (!hero || !canvas) return;
     const g = canvas.getContext("2d");
     if (!g) return;
+    // Reduced motion: draw the dot grid once, statically, so the background
+    // is still present instead of an empty canvas.
+    if (RM()) {
+      const drawStatic = () => {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = hero.clientWidth, h = hero.clientHeight;
+        canvas.width = Math.max(1, w * dpr);
+        canvas.height = Math.max(1, h * dpr);
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        g.clearRect(0, 0, w, h);
+        g.fillStyle = "rgba(29,29,31,0.16)";
+        for (let y = 17; y < h; y += 34)
+          for (let x = 17; x < w; x += 34) {
+            g.beginPath();
+            g.arc(x, y, 1.3, 0, 6.2832);
+            g.fill();
+          }
+      };
+      drawStatic();
+      window.addEventListener("resize", drawStatic);
+      window.addEventListener("load", drawStatic);
+      let stopStaticRO = null;
+      if (typeof ResizeObserver !== "undefined") {
+        const ro = new ResizeObserver(drawStatic);
+        ro.observe(hero);
+        stopStaticRO = () => ro.disconnect();
+      }
+      return () => {
+        window.removeEventListener("resize", drawStatic);
+        window.removeEventListener("load", drawStatic);
+        if (stopStaticRO) stopStaticRO();
+      };
+    }
     const GAP = 34, RADIUS = 150, PUSH = 3.2;
     let dots = [], raf = 0, visible = true;
     const mouse = { x: -9999, y: -9999 };
@@ -552,11 +586,7 @@ function Showcase() {
       <div className="showcase-pin">
         <div className="ar-grid" aria-hidden="true" />
         <div className="ar-ring" aria-hidden="true" />
-        <div className="scanline" aria-hidden="true" />
         <i className="corner tl" aria-hidden="true" /><i className="corner tr" aria-hidden="true" /><i className="corner bl" aria-hidden="true" /><i className="corner br" aria-hidden="true" />
-        <span className="ar-tag t1" aria-hidden="true"><i />Directions · 200 m</span>
-        <span className="ar-tag t2" aria-hidden="true"><i />EN → ES · Live</span>
-        <span className="ar-tag t3" aria-hidden="true"><i />REC · 12 MP</span>
         <h2 className="showcase-text">See the world,<br />augmented.</h2>
         <img className="showcase-img" src="/gely-glasses.png" alt="Gely glasses close-up" />
         <div className="caps">
