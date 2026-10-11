@@ -322,6 +322,7 @@ function Hero({ onBuy, canBuy, buying }) {
     const canvas = hero?.querySelector(".hero-dots");
     if (!hero || !canvas) return;
     const g = canvas.getContext("2d");
+    if (!g) return;
     const GAP = 34, RADIUS = 150, PUSH = 3.2;
     let dots = [], raf = 0, visible = true;
     const mouse = { x: -9999, y: -9999 };
@@ -347,12 +348,16 @@ function Hero({ onBuy, canBuy, buying }) {
     const onLeave = () => { mouse.x = -9999; mouse.y = -9999; };
     hero.addEventListener("mousemove", onMove);
     hero.addEventListener("mouseleave", onLeave);
-    const io = new IntersectionObserver((entries) => {
-      const v = entries[0]?.isIntersecting;
-      if (v && !visible) { visible = true; raf = requestAnimationFrame(tick); }
-      else if (!v) { visible = false; cancelAnimationFrame(raf); }
-    });
-    io.observe(hero);
+    let stopWatching = null;
+    if (typeof IntersectionObserver !== "undefined" && typeof requestAnimationFrame !== "undefined") {
+      const io = new IntersectionObserver((entries) => {
+        const v = entries[0] && entries[0].isIntersecting;
+        if (v && !visible) { visible = true; raf = requestAnimationFrame(tick); }
+        else if (!v) { visible = false; cancelAnimationFrame(raf); }
+      });
+      io.observe(hero);
+      stopWatching = () => io.disconnect();
+    }
     const tick = () => {
       if (!visible) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -381,7 +386,7 @@ function Hero({ onBuy, canBuy, buying }) {
     raf = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(raf);
-      io.disconnect();
+      if (stopWatching) stopWatching();
       window.removeEventListener("resize", resize);
       hero.removeEventListener("mousemove", onMove);
       hero.removeEventListener("mouseleave", onLeave);
