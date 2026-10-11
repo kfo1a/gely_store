@@ -100,15 +100,21 @@ function useCart() {
   const [busy, setBusy] = useState(false);
   const [buying, setBuying] = useState(false);
 
+  const storage = {
+    get(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} },
+    del(k) { try { window.localStorage.removeItem(k); } catch (e) {} },
+  };
+
   useEffect(() => {
     if (!isLive) return;
-    const id = localStorage.getItem("gely_cart");
-    if (id) shop.getCart(id).then((c) => c ? setCart(shop.normalizeCart(c)) : localStorage.removeItem("gely_cart")).catch(() => {});
+    const id = storage.get("gely_cart");
+    if (id) shop.getCart(id).then((c) => c ? setCart(shop.normalizeCart(c)) : storage.del("gely_cart")).catch(() => {});
   }, []);
 
   const run = useCallback(async (fn) => {
     setBusy(true);
-    try { const c = await fn(); setCart(shop.normalizeCart(c)); localStorage.setItem("gely_cart", c.id); }
+    try { const c = await fn(); setCart(shop.normalizeCart(c)); storage.set("gely_cart", c.id); }
     catch (e) { console.error(e); alert("Something went wrong with your cart. Please try again."); }
     finally { setBusy(false); }
   }, []);
@@ -340,6 +346,13 @@ function Hero({ onBuy, canBuy, buying }) {
     };
     resize();
     window.addEventListener("resize", resize);
+    window.addEventListener("load", resize);
+    let stopRO = null;
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(resize);
+      ro.observe(hero);
+      stopRO = () => ro.disconnect();
+    }
     const onMove = (e) => {
       const r = hero.getBoundingClientRect();
       mouse.x = e.clientX - r.left;
@@ -388,6 +401,8 @@ function Hero({ onBuy, canBuy, buying }) {
       cancelAnimationFrame(raf);
       if (stopWatching) stopWatching();
       window.removeEventListener("resize", resize);
+      window.removeEventListener("load", resize);
+      if (stopRO) stopRO();
       hero.removeEventListener("mousemove", onMove);
       hero.removeEventListener("mouseleave", onLeave);
     };
