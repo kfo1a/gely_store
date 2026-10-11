@@ -14,6 +14,18 @@ const RM = () =>
 
 const { money, isLive } = shop;
 
+// Fixed sale pricing: every pair is $69.99, marked down from $140.
+const SALE_PRICE = 69.99;
+const REGULAR_PRICE = 140;
+const pctOff = (v) => Math.round((1 - v.price / v.compareAt) * 100);
+const withSale = (products) =>
+  products ? products.map((p) => ({
+    ...p,
+    variants: p.variants.map((v) => ({
+      ...v, price: SALE_PRICE, compareAt: REGULAR_PRICE, currency: v.currency || "USD",
+    })),
+  })) : products;
+
 /* ================= primitives ================= */
 function Reveal({ as: Tag = "div", className = "", children, y = 48, delay = 0, ...rest }) {
   const ref = useRef(null);
@@ -183,13 +195,15 @@ function CartDrawer({ c }) {
                   <button disabled={busy} onClick={() => setQty(l, l.qty + 1)}>+</button>
                 </div>
               </div>
-              <span>{l.compareAt && l.compareAt > l.price ? <s className="muted">{money(l.compareAt * l.qty, cart.currency)} </s> : null}{money(l.price * l.qty, cart.currency)}</span>
+              <span className="line-price"><strong className="sale">{money(l.price * l.qty, cart.currency)}</strong>{l.compareAt && l.compareAt > l.price ? <s className="was">{money(l.compareAt * l.qty, cart.currency)}</s> : null}</span>
             </div>
           ))}
         </div>
         {!!cart?.lines.length && (
           <footer>
-            <div className="row"><span>Subtotal</span><strong>{money(cart.subtotal, cart.currency)}</strong></div>
+            <div className="row"><span>Subtotal</span><strong>{money(cart.lines.reduce((n, l) => n + l.qty * l.price, 0), cart.currency)}</strong></div>
+            {(() => { const saved = cart.lines.reduce((n, l) => n + (l.compareAt > l.price ? (l.compareAt - l.price) * l.qty : 0), 0);
+              return saved > 0 ? <div className="row save"><span>You save</span><strong>{money(saved, cart.currency)}</strong></div> : null; })()}
             {cart.checkoutUrl
               ? <a className="btn block" href={cart.checkoutUrl}>Check out</a>
               : <button className="btn block" onClick={() => alert("Demo mode: add your Shopify token in .env to enable checkout.")}>Check out</button>}
@@ -653,14 +667,14 @@ function ProductCard({ p, onBuy, buying }) {
 
   return (
       <div className="product" ref={cardRef}>
-        <div className="pimg">{p.image ? <img src={p.image} alt={p.title} /> : <Glasses tint={p.tint || "#1d1d1f"} />}</div>
+        <div className="pimg">{v.compareAt > v.price ? <span className="sale-badge">-{pctOff(v)}%</span> : null}{p.image ? <img src={p.image} alt={p.title} /> : <Glasses tint={p.tint || "#1d1d1f"} />}</div>
         <h3>{p.title}</h3>
         <p className="muted">{p.description}</p>
         {p.variants.length > 1 && (
           <div className="chips">{p.variants.map((x, i) => <button key={x.id} className={i === vi ? "on" : ""} onClick={() => setVi(i)}>{x.title}</button>)}</div>
         )}
         <div className="buy">
-          <span>From {money(v.price, v.currency)}{v.compareAt && v.compareAt > v.price ? <s className="muted"> {money(v.compareAt, v.currency)}</s> : null}</span>
+          <span className="price"><strong className="sale">{money(v.price, v.currency)}</strong>{v.compareAt && v.compareAt > v.price ? <s className="was">{money(v.compareAt, v.currency)}</s> : null}</span>
           
             <button className="btn sm" disabled={!v.available || buying} onClick={() => onBuy(v)}>{v.available ? (buying ? "Redirecting\u2026" : "Buy Now") : "Sold out"}</button>
         </div>
@@ -793,7 +807,8 @@ export default function App() {
     if (!isLive) return setProducts(demoProducts);
     shop.fetchProducts().then(setProducts).catch(() => setError(true));
   }, []);
-  const first = products?.[0] || null;
+  const saleProducts = withSale(products);
+  const first = saleProducts?.[0] || null;
   const firstVariant = first ? (first.variants.find((x) => x.available) || first.variants[0]) : null;
   const buyFirst = () => { if (firstVariant) c.buyNow(firstVariant); };
 
@@ -809,7 +824,7 @@ export default function App() {
         <Showcase />
         <Specs />
         <CtaBanner onBuy={buyFirst} canBuy={!!firstVariant} buying={c.buying} />
-        <Shop products={products} error={error} onBuy={(v) => c.buyNow(v)} buying={c.buying} />
+        <Shop products={saleProducts} error={error} onBuy={(v) => c.buyNow(v)} buying={c.buying} />
       </main>
       <Footer />
       <CartDrawer c={c} />
