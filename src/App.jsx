@@ -4,7 +4,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import * as shop from "./shopify.js";
 import { demoProducts } from "./demo.js";
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/react"
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
