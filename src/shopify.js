@@ -38,7 +38,7 @@ export async function fetchProducts() {
     image: p.featuredImage?.url || null,
     variants: p.variants.edges.map(({ node: v }) => ({
       id: v.id, title: v.title, available: v.availableForSale,
-      price: parseFloat(v.price.amount), currency: v.price.currencyCode,
+      price: parseFloat(v.price.amount), currency: "USD",
       compareAt: v.compareAtPrice ? parseFloat(v.compareAtPrice.amount) : null,
     })),
   }));
@@ -65,7 +65,7 @@ export function normalizeCart(c) {
   }));
   return {
     id: c.id, checkoutUrl: c.checkoutUrl, count: c.totalQuantity,
-    subtotal: lines.reduce((n, l) => n + l.qty * l.price, 0), currency: c.cost.subtotalAmount.currencyCode,
+    subtotal: lines.reduce((n, l) => n + l.qty * l.price, 0), currency: "USD",
     lines,
   };
 }

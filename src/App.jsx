@@ -20,7 +20,7 @@ const withSale = (products) =>
   products ? products.map((p) => ({
     ...p,
     variants: p.variants.map((v) => ({
-      ...v, price: SALE_PRICE, compareAt: REGULAR_PRICE, currency: v.currency || "USD",
+      ...v, price: SALE_PRICE, compareAt: REGULAR_PRICE, currency: "USD",
     })),
   })) : products;
 
