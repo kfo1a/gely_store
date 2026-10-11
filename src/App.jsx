@@ -12,11 +12,9 @@ const RM = () =>
   typeof window !== "undefined" &&
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-const { money, isLive } = shop;
+const { money, isLive, SALE_PRICE, REGULAR_PRICE } = shop;
 
 // Fixed sale pricing: every pair is $69.99, marked down from $140.
-const SALE_PRICE = 69.99;
-const REGULAR_PRICE = 140;
 const pctOff = (v) => Math.round((1 - v.price / v.compareAt) * 100);
 const withSale = (products) =>
   products ? products.map((p) => ({

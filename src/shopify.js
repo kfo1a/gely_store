@@ -4,6 +4,10 @@ const TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN;
 const API_VERSION = "2025-07";
 export const isLive = Boolean(DOMAIN && TOKEN);
 
+// Fixed sale pricing — the site never uses Shopify's price, only these.
+export const SALE_PRICE = 69.99;
+export const REGULAR_PRICE = 140;
+
 async function gql(query, variables = {}) {
   const res = await fetch(`https://${DOMAIN}/api/${API_VERSION}/graphql.json`, {
     method: "POST",
@@ -53,16 +57,16 @@ const CART = `
   } } }`;
 
 export function normalizeCart(c) {
+  const lines = c.lines.edges.map(({ node: l }) => ({
+    id: l.id, qty: l.quantity, variantId: l.merchandise.id,
+    title: l.merchandise.product.title, variantTitle: l.merchandise.title,
+    price: SALE_PRICE, compareAt: REGULAR_PRICE,
+    image: l.merchandise.image?.url || l.merchandise.product.featuredImage?.url || null,
+  }));
   return {
     id: c.id, checkoutUrl: c.checkoutUrl, count: c.totalQuantity,
-    subtotal: parseFloat(c.cost.subtotalAmount.amount), currency: c.cost.subtotalAmount.currencyCode,
-    lines: c.lines.edges.map(({ node: l }) => ({
-      id: l.id, qty: l.quantity, variantId: l.merchandise.id,
-      title: l.merchandise.product.title, variantTitle: l.merchandise.title,
-      price: parseFloat(l.merchandise.price.amount),
-      compareAt: l.merchandise.compareAtPrice ? parseFloat(l.merchandise.compareAtPrice.amount) : null,
-      image: l.merchandise.image?.url || l.merchandise.product.featuredImage?.url || null,
-    })),
+    subtotal: lines.reduce((n, l) => n + l.qty * l.price, 0), currency: c.cost.subtotalAmount.currencyCode,
+    lines,
   };
 }
 
