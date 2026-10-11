@@ -4,6 +4,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import * as shop from "./shopify.js";
 import { demoProducts } from "./demo.js";
+import { Analytics } from "@vercel/analytics/next"
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
@@ -659,7 +660,7 @@ function ProductCard({ p, onBuy, buying }) {
           <div className="chips">{p.variants.map((x, i) => <button key={x.id} className={i === vi ? "on" : ""} onClick={() => setVi(i)}>{x.title}</button>)}</div>
         )}
         <div className="buy">
-          <span>From {money(v.price, v.currency)}</span>
+          <span>From 69.99</span>
           
             <button className="btn sm" disabled={!v.available || buying} onClick={() => onBuy(v)}>{v.available ? (buying ? "Redirecting\u2026" : "Buy Now") : "Sold out"}</button>
         </div>
@@ -798,6 +799,7 @@ export default function App() {
 
   return (
     <>
+      <Analytics/>
       <ProgressBar />
       <Nav count={c.cart?.count || 0} onBag={() => c.setOpen(true)} />
       <main>
