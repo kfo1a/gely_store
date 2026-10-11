@@ -16,14 +16,14 @@ async function gql(query, variables = {}) {
 }
 
 export const money = (amount, currency = "USD") =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
+  new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(amount);
 
 // ---------- Products ----------
 const PRODUCTS = `{
   products(first: 12) { edges { node {
     id handle title description
     featuredImage { url altText }
-    variants(first: 10) { edges { node { id title availableForSale price { amount currencyCode } } } }
+    variants(first: 10) { edges { node { id title availableForSale price { amount currencyCode } compareAtPrice { amount } } } }
   } } }
 }`;
 
@@ -35,6 +35,7 @@ export async function fetchProducts() {
     variants: p.variants.edges.map(({ node: v }) => ({
       id: v.id, title: v.title, available: v.availableForSale,
       price: parseFloat(v.price.amount), currency: v.price.currencyCode,
+      compareAt: v.compareAtPrice ? parseFloat(v.compareAtPrice.amount) : null,
     })),
   }));
 }
@@ -46,7 +47,7 @@ const CART = `
   lines(first: 50) { edges { node {
     id quantity
     merchandise { ... on ProductVariant {
-      id title price { amount currencyCode }
+      id title price { amount currencyCode } compareAtPrice { amount }
       image { url } product { title featuredImage { url } }
     } }
   } } }`;
@@ -59,6 +60,7 @@ export function normalizeCart(c) {
       id: l.id, qty: l.quantity, variantId: l.merchandise.id,
       title: l.merchandise.product.title, variantTitle: l.merchandise.title,
       price: parseFloat(l.merchandise.price.amount),
+      compareAt: l.merchandise.compareAtPrice ? parseFloat(l.merchandise.compareAtPrice.amount) : null,
       image: l.merchandise.image?.url || l.merchandise.product.featuredImage?.url || null,
     })),
   };

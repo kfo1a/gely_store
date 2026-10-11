@@ -183,7 +183,7 @@ function CartDrawer({ c }) {
                   <button disabled={busy} onClick={() => setQty(l, l.qty + 1)}>+</button>
                 </div>
               </div>
-              <span>{money(l.price * l.qty, cart.currency)}</span>
+              <span>{l.compareAt && l.compareAt > l.price ? <s className="muted">{money(l.compareAt * l.qty, cart.currency)} </s> : null}{money(l.price * l.qty, cart.currency)}</span>
             </div>
           ))}
         </div>
@@ -660,7 +660,7 @@ function ProductCard({ p, onBuy, buying }) {
           <div className="chips">{p.variants.map((x, i) => <button key={x.id} className={i === vi ? "on" : ""} onClick={() => setVi(i)}>{x.title}</button>)}</div>
         )}
         <div className="buy">
-          <span>From 69.99</span>
+          <span>From {money(v.price, v.currency)}{v.compareAt && v.compareAt > v.price ? <s className="muted"> {money(v.compareAt, v.currency)}</s> : null}</span>
           
             <button className="btn sm" disabled={!v.available || buying} onClick={() => onBuy(v)}>{v.available ? (buying ? "Redirecting\u2026" : "Buy Now") : "Sold out"}</button>
         </div>
